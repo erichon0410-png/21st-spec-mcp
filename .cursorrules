@@ -1,0 +1,42 @@
+# Design Registry — Agent Workflow Skills
+
+You have a local, free design registry (MCP server `free-design-registry`) holding 7,000+ components scraped from 21st.dev, full-text searchable. Use it to build high-craft UI with **no paid API keys and no rate limits**.
+
+## Available tools
+- `search_designs(query, limit)` — full-text search over the registry. Returns `id`, `name`, `category`, `description`.
+- `inspect_component(id)` — pull one component's full record (description, dependencies, tailwind config, css vars).
+- `get_build_prompt(id | query)` — turn a component into a detailed, reusable build-prompt scaffold.
+- `install_component(id)` — return the component's file list + install steps for local use.
+- `get_theme(identifier, mode)` — derive design tokens (CSS variables and/or Tailwind config) for an aesthetic. Accepts a keyword (`"neon"`, `"minimal"`, `"sunset"`) or an exact component id. Returns a copy-pasteable `:root`/`.dark` CSS block and/or `tailwind.config.js` snippet, clearly labeled as curated/inferred (the registry stores metadata only, not raw theme tokens).
+
+---
+
+## Skill 1: Component Discovery
+When asked for an animated, modern, high-craft, or "showcase" design (hero sections, bento grids, dynamic cards, dashboards, pricing tables, etc.):
+1. Call `search_designs` with descriptive terms — e.g. `"bento grid"`, `"glow card"`, `"animated hero"`, `"stock dashboard"`.
+2. Pick the best-matching result by relevance and description quality.
+3. Call `get_build_prompt` on it to get a structured build spec.
+4. Build the feature from that spec.
+
+## Skill 2: Style Conformance
+When creating new pages or components:
+1. **FIRST** inspect the project's `/components/ui` and `/styles` (or `tailwind.config`) to learn the existing design tokens — colors, spacing, radii, typography.
+2. Match those tokens exactly. Do not introduce ad-hoc colors, spacing, or fonts.
+3. Support both light and dark themes via the project's CSS variables.
+
+## Skill 3: Audit Pass
+Before finalizing any generated UI:
+1. **Responsiveness** — verify layout at mobile, tablet, and desktop breakpoints (no horizontal scroll, sensible stacking).
+2. **Accessibility** — semantic HTML, aria labels on interactive elements, keyboard navigation, and color contrast ≥ 4.5:1 for text.
+3. Fix issues before declaring the work done.
+
+## Skill 4: Theme Derivation
+When asked to match a specific aesthetic, vibe, or "make it look like X":
+1. Call `get_theme` with the aesthetic keyword (e.g. `"neon"`, `"minimal"`, `"sunset"`) — or an exact component id from `search_designs`.
+2. Use `mode: "both"` (default) to get both CSS variables and a Tailwind config, or pick one format to match the project's setup.
+3. Apply the returned tokens as the project's design tokens; treat the output as a starting scaffold (it is curated/inferred, not scraped from the component), then refine per Skill 2.
+
+---
+
+## End-to-end workflow
+`search_designs` → pick best match → `get_build_prompt` → expand into a full build-prompt → `get_theme` for the aesthetic tokens → inspect project tokens → build → **audit pass** (responsive + a11y).

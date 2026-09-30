@@ -1,0 +1,33 @@
+{
+  "name": "free-design-registry",
+  "version": "1.0.0",
+  "description": "Self-hosted local MCP design registry: scrapes public shadcn/21st-style component schemas into SQLite (FTS5) and serves them over MCP stdio.",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "bin": {
+    "free-design-registry": "dist/server/index.cjs"
+  },
+  "scripts": {
+    "build": "node --import tsx src/build.ts",
+    "clean": "node -e \"fs.rmSync('dist',{recursive:true,force:true})\"",
+    "crawl": "node dist/crawler/index.cjs",
+    "start": "node dist/server/index.cjs",
+    "mcp": "node dist/server/index.cjs",
+    "dev": "tsx src/server.ts"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "better-sqlite3": "^11.3.0",
+    "fast-xml-parser": "^4.5.0",
+    "p-limit": "^6.0.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.10",
+    "@types/node": "^22.5.0",
+    "tsx": "^4.16.0",
+    "typescript": "^5.5.0"
+  }
+}
