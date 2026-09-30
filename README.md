@@ -27,13 +27,17 @@ Component ids are `"author/slug"`.
 - Node.js >= 20 (tested on 22). npm.
 - **No API keys.** The crawler talks to the public `21st.dev` endpoints directly.
 
-## Setup (rebuild from scratch)
+## Setup
 
 ```bash
 npm install        # installs better-sqlite3 (prebuilt binary) + deps
-npm run build      # esbuild CJS bundle -> dist/server/index.cjs, dist/crawler/index.cjs (+ copies schema.sql)
-npm run crawl      # populates the catalog (~15 min; idempotent). Flags below.
+npm run build      # esbuild CJS bundle -> dist/server/index.cjs, dist/crawler/index.cjs
+                   # (+ copies schema.sql and the base catalog assets/registry.db -> dist/data/)
 ```
+
+That's it — the base catalog (7,126 components) ships in the repo as `assets/registry.db`, so a fresh
+clone is ready to serve with no crawl. Run `npm run crawl` only if you want to refresh the data
+(~15 min; idempotent). Flags below.
 
 ### Crawl flags
 
@@ -78,7 +82,9 @@ node -e "const db=require('better-sqlite3')('dist/data/registry.db');console.log
 node -e "const db=require('better-sqlite3')('dist/data/registry.db',{readonly:true});console.log(db.prepare(\"SELECT id,name FROM components_fts WHERE components_fts MATCH 'bento' LIMIT 5\").all())"
 ```
 
-The database lives at `dist/data/registry.db` (WAL mode). It is git-ignored; the crawl recreates it.
+The database lives at `dist/data/registry.db` (WAL mode). The base catalog ships in the repo as
+`assets/registry.db` and the build copies it into `dist/data/`; `dist/data/` itself is git-ignored.
+Run `npm run crawl` to refresh the data.
 
 ## Agent workflow skills
 
@@ -94,6 +100,7 @@ free-design-registry/
 ├── .gitignore
 ├── README.md
 ├── .cursorrules          # agent workflow skills
+├── assets/registry.db    # base catalog (7,126 components) — committed; copied to dist/data/ on build
 ├── test-mcp.mjs          # MCP stdio integration test (all tools)
 ├── test-theme.mjs        # get_theme integration test
 └── src/
@@ -109,9 +116,9 @@ free-design-registry/
 This is a self-contained repo. To reproduce on any machine or agent:
 
 1. `git clone <this-repo>`
-2. `npm install && npm run build && npm run crawl`
+2. `npm install && npm run build`
 3. Add the MCP client config above.
 
-No secrets, no external services. The only network dependency is the public `21st.dev` endpoints
-during the one-time crawl. The prebuilt catalog is intentionally **not** committed (it's a ~10 MB
-binary blob); the idempotent crawl reproduces it in ~15 minutes.
+No secrets, no external services. The base catalog ships in the repo as `assets/registry.db`
+(~10 MB), so a fresh clone serves immediately with **no crawl**. The only network dependency is
+the public `21st.dev` endpoints, and only if you run `npm run crawl` to refresh the data.

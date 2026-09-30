@@ -37,7 +37,27 @@ async function main() {
   await cp(path.join(srcDir, "schema.sql"), path.join(outDir, "schema.sql"));
   await cp(path.join(srcDir, "schema.sql"), path.join(crawlerOutDir, "schema.sql"));
 
-  // 4. esbuild bundle crawler.ts -> dist/crawler/index.cjs (cjs)
+  // 4. Copy the base registry.db into dist/data/ if not already present.
+  //    A fresh clone ships the crawled catalog as a committed asset (assets/registry.db),
+  //    so setup is `npm install && npm run build` — no 15-min crawl required. If a
+  //    fresh crawl already produced dist/data/registry.db, leave it untouched.
+  const dataDir = path.join(dist, "data");
+  const baseDb = path.join(root, "assets", "registry.db");
+  const distDb = path.join(dataDir, "registry.db");
+  await mkdir(dataDir, { recursive: true });
+  let hasDistDb = false;
+  try {
+    const s = await stat(distDb);
+    hasDistDb = s.isFile();
+  } catch {
+    hasDistDb = false;
+  }
+  if (!hasDistDb) {
+    await cp(baseDb, distDb);
+    console.log(`[build] copied base DB -> ${distDb}`);
+  }
+
+  // 5. esbuild bundle crawler.ts -> dist/crawler/index.cjs (cjs)
   await esbuild.build({
     entryPoints: [path.join(srcDir, "crawler.ts")],
     bundle: true,
@@ -50,11 +70,12 @@ async function main() {
     logLevel: "info",
   });
 
-  // 5. Sanity: ensure dist artifacts exist
+  // 6. Sanity: ensure dist artifacts exist
   for (const p of [
     path.join(outDir, "index.cjs"),
     path.join(outDir, "schema.sql"),
     path.join(dist, "crawler", "index.cjs"),
+    distDb,
   ]) {
     const s = await stat(p);
     if (!s.isFile()) throw new Error(`missing artifact: ${p}`);
